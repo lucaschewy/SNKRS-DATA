@@ -6,18 +6,33 @@ const sneaks = new SneaksAPI();
 
 
 sneaks.getMostPopular(10000, function(err,products){
-    console.log(products)
-    const data = JSON.stringify(products);
-    console.log(data)
-    try {
-        var csv_data = Papa.unparse(data);
-        fs.writeFile("./export.csv", csv_data, { flag: 'w' }, function(){
-          console.log(csv_data);
-        });
-      } catch(e){
-        console.error(e);
-      }
-})
 
-// éditer le fichier json pour éditer les objets et créer des nouveaux champs pour chaque entrée
-// exporter en csv
+  var data = ""
+
+  for(key in products){
+    const generalData = JSON.stringify(products[key])
+    const obj = JSON.parse(generalData);
+    const priceData = JSON.stringify(products[key].lowestResellPrice)
+    const obj2 = JSON.parse(priceData);
+    const result = Object.assign({}, obj2, obj);
+    const stringResult = JSON.stringify(result)
+    if(data == ''){
+      data = "[" + stringResult
+    }else{
+      data = data + "," + stringResult
+    }
+  }
+
+  data = data + "]" 
+  
+  try {
+    var csv_data = Papa.unparse(data);
+    fs.writeFile("export.csv", csv_data, { flag: 'w' }, function(){});
+  } catch(e){
+      console.error(e);
+  }
+
+  console.log("--------------------------------------------------------------------------------------------------------------------")
+  console.log("--------------------------------------------------------------------------------------------------------------------")
+  console.log("Ne pas prêter attention aux erreurs en haut, ce n'est pas ma faute")
+})
