@@ -1,11 +1,12 @@
 import streamlit as st
 
-#app.py
-import app1
-import app2
+import generalData
+import research
+import home
 PAGES = {
-    "App1": app1,
-    "App2": app2
+    "Home": home,
+    "General Data": generalData,
+    "Sneakers Research": research
 }
 st.sidebar.title('Navigation')
 selection = st.sidebar.radio("Go to", list(PAGES.keys()))

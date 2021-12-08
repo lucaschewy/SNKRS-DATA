@@ -4,8 +4,12 @@ import plotly.express as px
 import pandas as pd
 
 def app():
-    st.title('APP1')
-    st.write('Welcome to app1')
+    st.title('General Data')
+    st.write('Welcome to this dashboard that will allow you to analyze and understand the sneaker resale market.')
+
+
+    st.image("https://cdn.dribbble.com/users/2502549/screenshots/15513115/media/d91789a62ee7d71b15f990342410143f.png?compress=1&resize=1600x1200")
+
 
     data = pd.read_csv('../Data/export.csv', sep=',', encoding='utf-8')
     data["profit"] = data["stockX"] - data["retailPrice"]
