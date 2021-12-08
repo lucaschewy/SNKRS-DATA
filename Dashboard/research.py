@@ -1,60 +1,83 @@
-# app2.py
+# Import des librairies
 import streamlit as st
 import plotly.express as px
 import pandas as pd
+import time
 
 def app():
-    st.title('APP2')
-    st.write('Welcome to app2')
+    # Contexte et titre du dashboard
+    st.title('Sneakers Research')
+    st.write('This module allows you to search and analyze the details of a pair and especially the price evolution ')
 
+    # Import de données et création du DataFrame
     data = pd.read_csv('../Data/export.csv', sep=',', encoding='utf-8')
+
+    # Ajout de la colonne calculé pour obtenir le profit pour chaque paire
     data["profit"] = data["stockX"] - data["retailPrice"]
 
-    options = st.multiselect('What are your favorite colors',data["brand"].unique())
-    xxuix = data.loc[data['brand'].isin(options)]
+    # Module de sélection des marques et stockage du ou des choix
+    options = st.multiselect('Brand',data["brand"].unique())
+    brandChoice = data.loc[data['brand'].isin(options)]
 
+    # Vérification si une marque a été selectionnée
     if options :
-        options2 = st.multiselect('What are your favorite colors',xxuix["silhoutte"].unique())
-        xxuix2 = xxuix.loc[data['silhoutte'].isin(options2)]
+
+        # Si oui, affichage des silhouettes liées à cette marque
+        options2 = st.multiselect('Shape',brandChoice["silhoutte"].unique())
+        shapeChoice = brandChoice.loc[data['silhoutte'].isin(options2)]
     else :
-        options2 = st.multiselect('What are your favorite colors',data["silhoutte"].unique())
-        xxuix2 = data.loc[data['silhoutte'].isin(options2)]
+
+        # Si non, affichage des silhouettes globales
+        options2 = st.multiselect('Shape',data["silhoutte"].unique())
+        shapeChoice = data.loc[data['silhoutte'].isin(options2)]
     
-    
+    # Vérification de la marque
     if options :
+
+        # Et si shape choisie, alors sélection des paires liées
         if options2 :
-            option = st.selectbox('How would you like to be contacted?', xxuix2["shoeName"])
-            st.write('You selected:', option)
+            option = st.selectbox('Shoes', shapeChoice["shoeName"])
+
+        # Et si pas de shape, alors sélection des paires liées
         else :
-            option = st.selectbox('How would you like to be contacted?', xxuix["shoeName"])
-            st.write('You selected:', option)
+            option = st.selectbox('Shoes', brandChoice["shoeName"])
+
+    # Si pas de marque
     else :
+
+        # Et si shape, alors sélection des paires liées
         if options2 :
-            option = st.selectbox('How would you like to be contacted?', xxuix2["shoeName"])
-            st.write('You selected:', option)
+            option = st.selectbox('Shoes', shapeChoice["shoeName"])
+
+        # Et si pas de shape, alors sélection des paires globales
         else :
-            option = st.selectbox('test', data["shoeName"])
-            st.write('You selected:', option)
+            option = st.selectbox('Shoes', data["shoeName"])
 
-    if st.button('Rechercher'):
-        st.write(option)
-        knonvc = data.loc[data['shoeName'] == option]
-        pd.set_option("display.max_colwidth", 10000)
-        imgtet = knonvc["thumbnail"].to_string(header = False, index = False)
-        st.image(imgtet)
-
-
-        test234679 = knonvc["profit"].to_string(header = False, index = False)
-        test234679sdfe = knonvc["retailPrice"].to_string(header = False, index = False)
-        test23467dd9sdfe = knonvc["stockX"].to_string(header = False, index = False)
-        calcul = (int(knonvc["stockX"]) - int(knonvc["retailPrice"])) / int(knonvc["retailPrice"]) 
-        calculFinal = str(round(calcul*100,2)) + "%"
-        col10, col20, col30 = st.columns(3)
-        col10.metric(label="Profit", value=test234679, delta = calculFinal)
-        col20.metric(label="retail", value=test234679sdfe)
-        col30.metric(label="ressell", value=test23467dd9sdfe)
+    # Bouton pour lancer la recherche avec temps d'attente
+    if st.button('Research'):
+        with st.empty():
+            for seconds in range(5):
+                st.write(f"⏳ Please Wait")
+                time.sleep(1)
+            st.write("Executed")
         
-        description = knonvc["description"].to_string(header = False, index = False)
+        # Affichage du nom et d'un visuel de la paire
+        st.title(option)
+        shoe = data.loc[data['shoeName'] == option]
+        pd.set_option("display.max_colwidth", 10000)
+        shoeImg = shoe["thumbnail"].to_string(header = False, index = False)
+        st.image(shoeImg)
+
+        # Affichage et calculs des principaux KPI de la paire
+        shoeProfit = shoe["profit"].to_string(header = False, index = False)
+        shoeRetail = shoe["retailPrice"].to_string(header = False, index = False)
+        shoeResell = shoe["stockX"].to_string(header = False, index = False)
+        shoePercentage = str(round((int(shoe["stockX"]) - int(shoe["retailPrice"])) / int(shoe["retailPrice"]), 2)) + "%"
+        col10, col20, col30 = st.columns(3)
+        col10.metric(label="Profit", value=shoeProfit, delta = shoePercentage)
+        col20.metric(label="retail", value=shoeRetail)
+        col30.metric(label="ressell", value=shoeResell)
+        
+        # Affichage de la description
+        description = shoe["description"].to_string(header = False, index = False)
         st.write(description)
-    else:
-        st.write('Goodbye')

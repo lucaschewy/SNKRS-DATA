@@ -1,73 +1,62 @@
-# app1.py
+# Import des librairies
 import streamlit as st
 import plotly.express as px
 import pandas as pd
+from datetime import datetime
 
 def app():
+    # Contexte et titre du dashboard
     st.title('General Data')
     st.write('Welcome to this dashboard that will allow you to analyze and understand the sneaker resale market.')
 
-
-    st.image("https://cdn.dribbble.com/users/2502549/screenshots/15513115/media/d91789a62ee7d71b15f990342410143f.png?compress=1&resize=1600x1200")
-
-
+    # Import de données et création du DataFrame
     data = pd.read_csv('../Data/export.csv', sep=',', encoding='utf-8')
+    
+    # Ajout de la colonne calculé pour obtenir le profit pour chaque paire
     data["profit"] = data["stockX"] - data["retailPrice"]
 
-    test0 = data["profit"].mean()
+    # Affichage et calculs des principaux KPI
+    profitMoyen = str(round(data["profit"].mean(), 2)) + "$"
+    retailMoyen = str(round(data["retailPrice"].mean(), 2)) + "$"
+    resellMoyen = str(round(data["stockX"].mean(), 2)) + "$"
+    profitPercentage = str(round(((data["stockX"].mean() - data["retailPrice"].mean()) / data["retailPrice"].mean()), 2) * 100) + "%"
+
     col1, col2, col3 = st.columns(3)
-    col1.metric(label="Profit moyen", value=test0)
-    col2.metric("Wind", "9 mph", "-8%")
-    col3.metric("Humidity", "86%", "4%")
+    col1.metric(label="Average Profit", value=profitMoyen, delta = profitPercentage)
+    col2.metric(label="Average Retail Price", value=retailMoyen)
+    col3.metric(label="Average Resell Price", value=resellMoyen)
 
-    ##################################
-    # Global
-    ##################################
+    # DataFrame pour analysser l'évolution du marché
+    prixEvo = data[['profit', 'stockX', 'retailPrice', 'releaseDate']].groupby(['releaseDate']).agg('sum').sort_values(by='releaseDate', ascending=True)
+    prixEvo.reset_index(inplace=True)
 
-    # évolution du marché du resell
-    # vérifier l'évolution du resell, il y a t il une saisonalité
-    # prix retail & prix resell en fonction de la date (moyenne)
+    # Slider pour pouvoir sélectioner la plage de date souhaitée
+    tailleDF = len(prixEvo) - 1
+    prixEvo["releaseDate"] = pd.to_datetime(prixEvo["releaseDate"])
+    startRange = prixEvo["releaseDate"][0].to_pydatetime()
+    endRange = prixEvo["releaseDate"][tailleDF].to_pydatetime()
+    dateRange = st.slider('Select a range of date', min_value = startRange, value = (startRange, endRange),max_value = endRange, format = "YYYY-MM-DD")
+    startDate, endDate = dateRange
+    startDate = str(startDate.date())
+    endDate = str(endDate.date())
 
-    test = data[['profit', 'stockX', 'retailPrice', 'releaseDate']].groupby(['releaseDate']).agg('sum').sort_values(by='releaseDate', ascending=True)
-    test.reset_index(inplace=True)
-    test123 = test.query('releaseDate >= "2016/01/01"')
-    fig = px.histogram(test123, x="releaseDate", y=["profit", 'retailPrice', 'stockX'])
+    # Query en fonction de la date et affichage de l'histogramme
+    prixRangeEvo = prixEvo.query('releaseDate >= "' + startDate + '" and releaseDate <= "' + endDate + '"')
+    fig = px.histogram(prixRangeEvo, x="releaseDate", y=["profit", 'retailPrice', 'stockX'], title = 'Evolution of the Sneakers market', color_discrete_sequence=px.colors.qualitative.Pastel)
     st.plotly_chart(fig)
 
-    # vision par marque
-    # quelle marque fonctionne le mieux, est-ce qu'il y a des périodes
-    # prix retail & prix resell en fonction de la date et de la marque (moyenne)
+    # DataFrame pour analyser la performance par marque
+    brandProfit = data[['profit', 'brand', 'releaseDate']].groupby(['brand']).agg('mean').sort_values(by='profit', ascending=False).dropna()
+    brandProfit.reset_index(inplace=True)
 
-    test2 = data[['profit', 'brand', 'releaseDate']].groupby(['brand']).agg('mean').sort_values(by='profit', ascending=False).dropna()
-    test2.reset_index(inplace=True)
-    fig2 = px.bar(test2, x="profit", y="brand", color="brand", orientation='h')
+    # Affichage de l'histogramme
+    fig2 = px.bar(brandProfit, x="profit", y="brand", color="brand", orientation='h', title = 'Brand Profit', color_discrete_sequence=px.colors.qualitative.Pastel)
     st.plotly_chart(fig2)
 
-    # vision des meilleurs silhouette
-    # prix retail & prix resell en fonction de la silhouette
+    # Vision des meilleurs silhouettes
+    bestSilhoutte = data[['profit', 'silhoutte']].groupby(['silhoutte']).agg('mean').sort_values(by='profit', ascending=False)
+    bestSilhoutte.reset_index(inplace=True)
 
-    test3 = data[['profit', 'silhoutte']].groupby(['silhoutte']).agg('mean').sort_values(by='profit', ascending=False)
-    test3.reset_index(inplace=True)
-    fig3 = px.histogram(test3[:50], x="silhoutte", y="profit", color="silhoutte")
+    # Affichage de l'histogramme, filtré sur le top 50
+    fig3 = px.histogram(bestSilhoutte[:50], x="silhoutte", y="profit", color="silhoutte", title = 'Best Silhoutte', color_discrete_sequence=px.colors.qualitative.Pastel)
     st.plotly_chart(fig3)
-
-    st.image(data["thumbnail"][0])
-    st.image(data["thumbnail"][1])
-    st.image(data["thumbnail"][2])
-
-    ##################################
-    # Détaillé
-    ##################################
-
-    # vision centrée sur une marque
-    # Est-ce qu'il y a une saisonalité pour une marque précise + top 3 silhouette de la marque
-    # prix retail & prix resell en fonction de la date et de la marque filtré (moyenne)
-
-
-    ##################################
-    # Supplément demande un autre export
-    ##################################
-
-    # vision centrée sur une silhouette / paire
-    # Vérifier le prix retail et resell de la paire dans le temps
-    # prix retail & prix resell en fonction de la date et de la paire filtrée (moyenne)
